@@ -1,0 +1,15 @@
+<configuration>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date %-5level [%thread] %logger: %msg%n%ex{32}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="console" />
+    </root>
+
+    <logger name="indentia" level="info"/>
+
+</configuration>
