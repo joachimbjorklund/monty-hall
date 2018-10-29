@@ -7,11 +7,12 @@
     "npm": "^6.4.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
-    "react-scripts": "1.1.0"
+    "react-scripts": "1.1.0",
+    "antd": "^3.10.3"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "mkdir -p target/classes/public && react-scripts build && cp -r build/* target/classes/public",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },

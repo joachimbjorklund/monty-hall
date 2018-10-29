@@ -2,22 +2,26 @@ package indentia.monty_hall.backend;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static indentia.monty_hall.backend.MontyHallEngine.BehindDoor.CAR;
-import static indentia.monty_hall.backend.MontyHallEngine.BehindDoor.GOAT;
-import static indentia.monty_hall.backend.MontyHallEngine.DoorState.CLOSED;
-import static indentia.monty_hall.backend.MontyHallEngine.DoorState.CLOSED_PICKED;
-import static indentia.monty_hall.backend.MontyHallEngine.GameState.GAME_OVER;
-import static indentia.monty_hall.backend.MontyHallEngine.GameState.MONTY_OPENS_GOAT_DOORS;
-import static indentia.monty_hall.backend.MontyHallEngine.GameState.USER_MIGHT_SWITCH_DOOR;
-import static indentia.monty_hall.backend.MontyHallEngine.GameState.USER_OPEN_PICKED_DOOR;
-import static indentia.monty_hall.backend.MontyHallEngine.GameState.USER_PICK_DOOR;
+import static indentia.monty_hall.backend.MontyHallSimulator.BehindDoor.CAR;
+import static indentia.monty_hall.backend.MontyHallSimulator.BehindDoor.GOAT;
+import static indentia.monty_hall.backend.MontyHallSimulator.DoorState.CLOSED;
+import static indentia.monty_hall.backend.MontyHallSimulator.DoorState.CLOSED_PICKED;
+import static indentia.monty_hall.backend.MontyHallSimulator.GameState.GAME_OVER;
+import static indentia.monty_hall.backend.MontyHallSimulator.GameState.MONTY_OPENS_GOAT_DOORS;
+import static indentia.monty_hall.backend.MontyHallSimulator.GameState.USER_MIGHT_SWITCH_DOOR;
+import static indentia.monty_hall.backend.MontyHallSimulator.GameState.USER_OPEN_PICKED_DOOR;
+import static indentia.monty_hall.backend.MontyHallSimulator.GameState.USER_PICK_DOOR;
+import static indentia.monty_hall.backend.MontyHallSimulator.Stat.LOSSES;
+import static indentia.monty_hall.backend.MontyHallSimulator.Stat.WINS;
 
-public class MontyHallEngine {
+public class MontyHallSimulator {
 
 
     private static final int DEFAULT_NBR_DOORS = 3;
@@ -28,11 +32,11 @@ public class MontyHallEngine {
     private UserDecision userDecision = UserDecision.RANDOM;
     private GameState gameState = GAME_OVER;
 
-    public MontyHallEngine() {
+    public MontyHallSimulator() {
         setup(DEFAULT_NBR_DOORS);
     }
 
-    public MontyHallEngine(int nbrDoors) {
+    public MontyHallSimulator(int nbrDoors) {
         setup(nbrDoors);
     }
 
@@ -145,7 +149,37 @@ public class MontyHallEngine {
         return pickDoor(new Random().nextInt(doors.size()));
     }
 
-    public Door play() {
+    static Map<Stat, Integer> newStats() {
+        Map<Stat, Integer> stats = new HashMap<>();
+        stats.put(WINS, 0);
+        stats.put(LOSSES, 0);
+        return stats;
+    }
+
+    static Map<Stat, Integer> simulate(int nbrDoors, int nbrSimulations, UserDecision userDecision) {
+        MontyHallSimulator simulator = new MontyHallSimulator(nbrDoors);
+        simulator.userDecision = userDecision;
+
+        Map<Stat, Integer> stats = newStats();
+        for (int i = 0; i < nbrSimulations; i++) {
+            Door userPickedDoor = simulator.simulate();
+
+            Integer wins = stats.get(WINS);
+            Integer losses = stats.get(LOSSES);
+
+            if (userPickedDoor.content == CAR) {
+                wins = wins.intValue() + 1;
+                stats.put(WINS, wins.intValue());
+            } else {
+                losses = losses.intValue() + 1;
+                stats.put(LOSSES, losses.intValue());
+            }
+            simulator.setup(nbrDoors);
+        }
+        return stats;
+    }
+
+    public Door simulate() {
         Door pickedDoor = userPicksDoor();
         List<Door> openGoatDoors = montyOpensGoatDoors();
         Door userDecidedDoor = userMightSwitchDoor();
@@ -245,5 +279,10 @@ public class MontyHallEngine {
         USER_MIGHT_SWITCH_DOOR,
         USER_OPEN_PICKED_DOOR,
         GAME_OVER
+    }
+
+    enum Stat {
+        WINS,
+        LOSSES,
     }
 }

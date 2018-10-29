@@ -21,11 +21,16 @@
         <spring.version>4.3.18.RELEASE</spring.version>
         <testng.version>6.9.10</testng.version>
         <jackson.version>2.9.4</jackson.version>
+
+        <!-- plugin versions -->
+        <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
+        <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
     </properties>
 
     <modules>
         <module>frontend</module>
         <module>backend</module>
+        <module>app</module>
     </modules>
 
     <dependencyManagement>
@@ -51,18 +56,6 @@
                 <scope>import</scope>
             </dependency>
 
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-core</artifactId>
-                <version>${spring.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
             <!-- Test -->
             <dependency>
                 <groupId>org.testng</groupId>
@@ -75,6 +68,21 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>${exec-maven-plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
