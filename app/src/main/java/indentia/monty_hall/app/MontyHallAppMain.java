@@ -1,4 +1,4 @@
-package indentia.monty_hall.all_in_one;
+package indentia.monty_hall.app;
 
 import indentia.monty_hall.backend.MontyHallBackendMain;
 import indentia.monty_hall.frontend.MontyHallFrontendMain;
@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
 @Import({MontyHallFrontendMain.class, MontyHallBackendMain.class})
-public class MontyHallAllInOneMain {
+public class MontyHallAppMain {
 	public static void main(String[] args) {
-		SpringApplication.run(MontyHallAllInOneMain.class, args);
+		SpringApplication.run(MontyHallAppMain.class, args);
 	}
 }

@@ -7,7 +7,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>all-in-one</artifactId>
+    <artifactId>monty-hall-app</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>
@@ -61,7 +61,7 @@
                 </executions>
                 <configuration>
                     <classifier>shaded</classifier>
-                    <mainClass>indentia.monty_hall.all_in_one.MontyHallAllInOneMain</mainClass>
+                    <mainClass>indentia.monty_hall.app.MontyHallAppMain</mainClass>
                 </configuration>
             </plugin>
         </plugins>
