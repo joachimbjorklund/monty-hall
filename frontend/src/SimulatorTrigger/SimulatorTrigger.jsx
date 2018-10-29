@@ -9,7 +9,8 @@ class SimulatorTrigger extends Component {
 
     state = {
         nbrOfDoors: '3',
-        nbOfSimulations: '100'
+        nbOfSimulations: '100',
+        result: ''
     };
 
     handleNbrOfDoorsChange = event => {
@@ -17,6 +18,9 @@ class SimulatorTrigger extends Component {
     }
     handleNbrOfSimulations = event => {
         this.setState({nbOfSimulations: event.target.value})
+    }
+    handleErrorResponse = event => {
+        this.setState({error: event.target.value})
     }
 
     handleSubmit = event => {
@@ -31,6 +35,10 @@ class SimulatorTrigger extends Component {
                 console.log(res);
                 console.log(res.data);
             })
+            .catch(res => {
+                console.log(res);
+                handleErrorResponse(res)
+            });
     }
 
     render() {
@@ -39,12 +47,10 @@ class SimulatorTrigger extends Component {
                 <Form.Item>
                     <label>Number of doors: <input type="text" name="this.state.nbrOfDoors"
                                                    onChange={this.handleNbrOfDoorsChange}/></label>
-                </Form.Item>
-                <Form.Item>
                     <label>Number of simulations: <input type="text" name="this.state.nbOfSimulations"
                                                          onChange={this.handleNbrOfSimulations}/></label><br/>
+                    <button type="submit">Start Simulation</button>
                 </Form.Item>
-                <button type="submit">Start Simulation</button>
             </Form>
         );
     }
