@@ -17,14 +17,13 @@ public class HealthControllerTest extends AbstractTestNGSpringContextTests {
     @Configuration
     @Import(MontyHallBackendMain.class)
     static class Conf{
-
     }
 
     @Autowired
     private TestRestTemplate restTemplate;
 
     @Test
-    public void testHealthGivesOK() {
+    public void testHealthGivesUP() {
         String health = restTemplate.getForObject("/health", String.class);
 
         assertEquals(health, "UP");
