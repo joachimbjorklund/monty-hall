@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import monty from './monty.jpg';
 import './App.css';
 import BackendHealth from './BackendHealth/BackendHealth';
-import SimulatorForm from "./SimulatorTrigger/SimulatorForm";
+import SimulatorForm from "./SimulatorForm/SimulatorForm";
 
 class App extends Component {
     render() {

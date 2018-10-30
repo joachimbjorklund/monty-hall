@@ -3,10 +3,6 @@ import axios from 'axios';
 import {Form} from 'antd';
 import 'antd/lib/form/style/index.css';
 
-const errorStyle = {
-    color: 'red'
-};
-
 class SimulatorForm extends Component {
 
     state = {
@@ -34,7 +30,9 @@ class SimulatorForm extends Component {
             .then(res => {
                 console.log(res);
                 console.log(res.data);
-                this.setState({result: res.data.winPercentage});
+
+                // e.g {"result":{"stats":{"WINS":677,"LOSSES":323,"WIN_PERCENTAGE":67,"ROUNDS":1000}}}
+                this.setState({result: res.data.result.stats.WIN_PERCENTAGE});
             })
             .catch(res => {
                 this.setState({error: res.toString() + "(Check server logs)", result: -1});
@@ -51,7 +49,7 @@ class SimulatorForm extends Component {
                                                          onChange={this.handleNbrOfSimulations}/></label><br/>
                     <label>Win%: {this.state.result}</label><br/>
                     <button type="submit">Start Simulation</button><br/>
-                    <label style={errorStyle}>{this.state.error}</label><br/>
+                    <label style={{color: 'red'}}>{this.state.error}</label><br/>
                 </Form.Item>
             </Form>
         );

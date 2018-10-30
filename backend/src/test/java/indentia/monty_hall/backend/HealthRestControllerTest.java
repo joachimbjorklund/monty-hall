@@ -11,8 +11,8 @@ import org.testng.annotations.Test;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.testng.Assert.assertEquals;
 
-@SpringBootTest(classes = {HealthControllerTest.Conf.class}, webEnvironment = RANDOM_PORT)
-public class HealthControllerTest extends AbstractTestNGSpringContextTests {
+@SpringBootTest(classes = {HealthRestControllerTest.Conf.class}, webEnvironment = RANDOM_PORT)
+public class HealthRestControllerTest extends AbstractTestNGSpringContextTests {
 
     @Configuration
     @Import(MontyHallBackendMain.class)

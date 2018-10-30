@@ -1,115 +1,133 @@
 package indentia.monty_hall.backend;
 
+import indentia.monty_hall.backend.Door.DoorWithCar;
+import indentia.monty_hall.backend.Door.DoorWithGoat;
+import indentia.monty_hall.backend.EnumTypes.UserSwitchDoor;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static indentia.monty_hall.backend.MontyHallSimulator.BehindDoor.CAR;
-import static indentia.monty_hall.backend.MontyHallSimulator.BehindDoor.GOAT;
-import static indentia.monty_hall.backend.MontyHallSimulator.DoorState.CLOSED;
-import static indentia.monty_hall.backend.MontyHallSimulator.DoorState.CLOSED_PICKED;
-import static indentia.monty_hall.backend.MontyHallSimulator.GameState.GAME_OVER;
-import static indentia.monty_hall.backend.MontyHallSimulator.GameState.MONTY_OPENS_GOAT_DOORS;
-import static indentia.monty_hall.backend.MontyHallSimulator.GameState.USER_MIGHT_SWITCH_DOOR;
-import static indentia.monty_hall.backend.MontyHallSimulator.GameState.USER_OPEN_PICKED_DOOR;
-import static indentia.monty_hall.backend.MontyHallSimulator.GameState.USER_PICK_DOOR;
-import static indentia.monty_hall.backend.MontyHallSimulator.Stat.LOSSES;
-import static indentia.monty_hall.backend.MontyHallSimulator.Stat.WINS;
+import static indentia.monty_hall.backend.Door.DoorContent.CAR;
+import static indentia.monty_hall.backend.MontyHallSimulator.State.GAME_OVER;
+import static indentia.monty_hall.backend.MontyHallSimulator.State.MONTY_OPENS_GOAT_DOORS;
+import static indentia.monty_hall.backend.MontyHallSimulator.State.USER_MIGHT_SWITCH_DOOR;
+import static indentia.monty_hall.backend.MontyHallSimulator.State.USER_OPEN_PICKED_DOOR;
+import static indentia.monty_hall.backend.MontyHallSimulator.State.USER_PICK_DOOR;
 
+@SuppressWarnings("unused")
 public class MontyHallSimulator {
-
 
     private static final int DEFAULT_NBR_DOORS = 3;
 
-    List<Door> doors;
-    private Optional<Door> pickedDoor;
-    private boolean userSwitchesDoor;
-    private UserDecision userDecision = UserDecision.RANDOM;
-    private GameState gameState = GAME_OVER;
+    private List<Door> doors;
+    private Optional<Door> userPickedDoor;
+    private UserSwitchDoor userSwitchDoor = UserSwitchDoor.ALWAYS;
+    private State state = GAME_OVER;
 
     public MontyHallSimulator() {
-        setup(DEFAULT_NBR_DOORS);
+        reset(DEFAULT_NBR_DOORS);
     }
 
     public MontyHallSimulator(int nbrDoors) {
-        setup(nbrDoors);
+        reset(nbrDoors);
     }
 
-    public Door userPicksDoor() {
-        if (gameState != USER_PICK_DOOR) {
+    public static Stats simulate(int nbrDoors, int nbrSimulations, UserSwitchDoor userSwitchDoor) {
+        MontyHallSimulator simulator = new MontyHallSimulator(nbrDoors);
+        simulator.userSwitchDoor = userSwitchDoor;
+
+        Stats stats = new Stats();
+        for (int i = 0; i < nbrSimulations; i++) {
+            Door userPickedDoor = simulator.simulate();
+
+            if (userPickedDoor.haveCar()) {
+                stats.addWin();
+            } else {
+                stats.addLoss();
+            }
+            simulator.reset(nbrDoors);
+        }
+        return stats;
+    }
+
+    private Door simulate() {
+        userPicksDoor();
+        montyOpensGoatDoors();
+        userMightSwitchDoor();
+        return userOpenPickedDoor();
+    }
+
+    private void userPicksDoor() {
+        if (state != USER_PICK_DOOR) {
             throw new RuntimeException("wrong state");
         }
-        gameState = MONTY_OPENS_GOAT_DOORS;
-        return pickRandomDoor();
+        state = MONTY_OPENS_GOAT_DOORS;
+        pickRandomDoor();
     }
 
-    public Door userOpenPickedDoor() {
-        if (gameState != USER_OPEN_PICKED_DOOR) {
-            throw new RuntimeException("wrong state");
-        }
-        gameState = GAME_OVER;
-        return pickedDoor.get();
-    }
-
-    public List<Door> montyOpensGoatDoors() {
-        if (gameState != MONTY_OPENS_GOAT_DOORS) {
+    private void montyOpensGoatDoors() {
+        if (state != MONTY_OPENS_GOAT_DOORS) {
             throw new RuntimeException("wrong state");
         }
 
         List<Door> openedDoors = new ArrayList<>();
         doors.forEach(d -> {
-            if ((d.doorState == CLOSED) && (d.content == GOAT)) {
+            if ((d.isClosed()) && (d.haveGoat())) {
                 d.open();
                 openedDoors.add(d);
             }
         });
 
-        if (pickedDoor.get().content == CAR) {
+        userPickedDoor.filter(Door::haveCar).ifPresent(d -> {
             Collections.shuffle(openedDoors);
             openedDoors.get(0).close();
-        }
-        gameState = USER_MIGHT_SWITCH_DOOR;
-        return openedDoors;
+        });
+        state = USER_MIGHT_SWITCH_DOOR;
     }
 
-    public Door userMightSwitchDoor() {
-        if (gameState != USER_MIGHT_SWITCH_DOOR) {
+    private void userMightSwitchDoor() {
+        if (state != USER_MIGHT_SWITCH_DOOR) {
             throw new RuntimeException("wrong state");
         }
 
-        if (((userDecision == UserDecision.RANDOM) && new Random().nextBoolean()) || (userDecision == UserDecision.ALWAYS)) {
+        if (shouldUserSwitchDoor()) {
             List<Door> closedDoors = getClosedDoors();
             if (closedDoors.size() != 1) {
-                throw new RuntimeException("fatal");
+                throw new RuntimeException("closed dooer != 1, " + closedDoors.size());
             }
             int index = doors.indexOf(closedDoors.get(0));
             pickDoor(index);
-            userSwitchesDoor = true;
         }
 
-        gameState = USER_OPEN_PICKED_DOOR;
-        return pickedDoor.orElseThrow(() -> new RuntimeException("fatal"));
+        state = USER_OPEN_PICKED_DOOR;
     }
 
-    public boolean userSwitchedDoor() {
-        return userSwitchesDoor;
+    private Door userOpenPickedDoor() {
+        if (state != USER_OPEN_PICKED_DOOR) {
+            throw new RuntimeException("wrong state");
+        }
+        state = GAME_OVER;
+        return userPickedDoor.get();
     }
 
-    List<Door> getClosedDoors() {
-        return doors.stream().filter(d -> d.doorState == CLOSED).collect(Collectors.toList());
+    private boolean shouldUserSwitchDoor() {
+        return ((userSwitchDoor == UserSwitchDoor.RANDOM) && new Random().nextBoolean()) || (userSwitchDoor == UserSwitchDoor.ALWAYS);
     }
 
-    void setup() {
-        setup(DEFAULT_NBR_DOORS);
+    private List<Door> getClosedDoors() {
+        return doors.stream().filter(Door::isClosed).collect(Collectors.toList());
     }
 
-    void setup(int nbrDoors) {
-        if (gameState != GAME_OVER) {
+    private void reset() {
+        reset(DEFAULT_NBR_DOORS);
+    }
+
+    private void reset(int nbrDoors) {
+        if (state != GAME_OVER) {
             throw new RuntimeException("wrong state");
         }
 
@@ -125,164 +143,34 @@ public class MontyHallSimulator {
         int doorWithCar = new Random().nextInt(doors.size());
         doors.set(doorWithCar, new DoorWithCar());
 
-        pickedDoor = Optional.empty();
-        gameState = USER_PICK_DOOR;
+        userPickedDoor = Optional.empty();
+        state = USER_PICK_DOOR;
     }
 
-    BehindDoor openDoor(int number) {
-        if ((number < 2) || (number > (doors.size() - 1))) {
-            throw new RuntimeException("no such door");
-        }
-        Door door = doors.get(number);
-        return door.open();
-    }
-
-    private Door pickDoor(int number) {
-        pickedDoor.ifPresent(Door::unpick);
+    private void pickDoor(int number) {
+        userPickedDoor.ifPresent(Door::unpick);
         Door door = doors.get(number);
         door.pick();
-        pickedDoor = Optional.of(door);
-        return pickedDoor.get();
+        userPickedDoor = Optional.of(door);
     }
 
-    Door pickRandomDoor() {
-        return pickDoor(new Random().nextInt(doors.size()));
+    private void pickRandomDoor() {
+        pickDoor(new Random().nextInt(doors.size()));
     }
 
-    static Map<Stat, Integer> newStats() {
-        Map<Stat, Integer> stats = new HashMap<>();
-        stats.put(WINS, 0);
-        stats.put(LOSSES, 0);
-        return stats;
+    void userAlwaysSwitchesDoor() {
+        this.userSwitchDoor = UserSwitchDoor.ALWAYS;
     }
 
-    static Map<Stat, Integer> simulate(int nbrDoors, int nbrSimulations, UserDecision userDecision) {
-        MontyHallSimulator simulator = new MontyHallSimulator(nbrDoors);
-        simulator.userDecision = userDecision;
-
-        Map<Stat, Integer> stats = newStats();
-        for (int i = 0; i < nbrSimulations; i++) {
-            Door userPickedDoor = simulator.simulate();
-
-            Integer wins = stats.get(WINS);
-            Integer losses = stats.get(LOSSES);
-
-            if (userPickedDoor.content == CAR) {
-                wins = wins.intValue() + 1;
-                stats.put(WINS, wins.intValue());
-            } else {
-                losses = losses.intValue() + 1;
-                stats.put(LOSSES, losses.intValue());
-            }
-            simulator.setup(nbrDoors);
-        }
-        return stats;
+    List<Door> getDoors() {
+        return doors;
     }
 
-    public Door simulate() {
-        Door pickedDoor = userPicksDoor();
-        List<Door> openGoatDoors = montyOpensGoatDoors();
-        Door userDecidedDoor = userMightSwitchDoor();
-        Door openedDoor = userOpenPickedDoor();
-
-        return openedDoor;
-    }
-
-    public void userRandomlySwitchesDoor() {
-        this.userDecision = UserDecision.RANDOM;
-    }
-
-    public void userAlwaysSwitchesDoor() {
-        this.userDecision = UserDecision.ALWAYS;
-    }
-
-    public void userNeverSwitchesDoor() {
-        this.userDecision = UserDecision.NEVER;
-    }
-
-    abstract class Door {
-        final BehindDoor content;
-        DoorState doorState;
-
-        protected Door(BehindDoor content) {
-            this.content = content;
-            this.doorState = CLOSED;
-        }
-
-        private BehindDoor open() {
-            doorState = DoorState.OPEN;
-            return content;
-        }
-
-        public void close() {
-            doorState = DoorState.CLOSED;
-        }
-
-        private Door pick() {
-            if (doorState != CLOSED || pickedDoor.isPresent()) {
-                throw new RuntimeException("can only pick closed doors");
-            }
-            doorState = DoorState.CLOSED_PICKED;
-            return this;
-        }
-
-        private Door unpick() {
-            if (doorState != CLOSED_PICKED) {
-                throw new RuntimeException("can only pick closed doors");
-            }
-            pickedDoor = Optional.empty();
-            doorState = DoorState.CLOSED;
-            return this;
-        }
-
-        @Override
-        public String toString() {
-            return "Door{" +
-                   "content=" + content +
-                   ", doorState=" + doorState +
-                   '}';
-        }
-    }
-
-    class DoorWithGoat extends Door {
-        DoorWithGoat() {
-            super(GOAT);
-        }
-    }
-
-    class DoorWithCar extends Door {
-        DoorWithCar() {
-            super(BehindDoor.CAR);
-        }
-    }
-
-    enum UserDecision {
-        RANDOM,
-        NEVER,
-        ALWAYS
-    }
-
-    enum BehindDoor {
-        GOAT,
-        CAR
-    }
-
-    enum DoorState {
-        OPEN,
-        CLOSED,
-        CLOSED_PICKED
-    }
-
-    enum GameState {
+    enum State {
         USER_PICK_DOOR,
         MONTY_OPENS_GOAT_DOORS,
         USER_MIGHT_SWITCH_DOOR,
         USER_OPEN_PICKED_DOOR,
         GAME_OVER
-    }
-
-    enum Stat {
-        WINS,
-        LOSSES,
     }
 }

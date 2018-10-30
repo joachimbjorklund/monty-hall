@@ -1,13 +1,10 @@
 package indentia.monty_hall.backend;
 
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.Map;
-
-import static indentia.monty_hall.backend.MontyHallSimulator.BehindDoor.CAR;
-import static indentia.monty_hall.backend.MontyHallSimulator.BehindDoor.GOAT;
-import static indentia.monty_hall.backend.MontyHallSimulator.DoorState.CLOSED;
-import static indentia.monty_hall.backend.MontyHallSimulator.UserDecision.ALWAYS;
+import static indentia.monty_hall.backend.EnumTypes.UserSwitchDoor.ALWAYS;
+import static indentia.monty_hall.backend.Stats.StatKey.WIN_PERCENTAGE;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -19,19 +16,19 @@ public class MontyHallSimulatorTest {
         try {
             new MontyHallSimulator(2);
             fail();
-        } catch (Exception e) {
+        } catch (Exception ignore) {
         }
 
         int nbrDoors = 10;
         MontyHallSimulator montyHallSimulator = new MontyHallSimulator(nbrDoors);
 
-        long nbrDoorsWithCars = montyHallSimulator.doors.stream().filter(d -> d.content == CAR).count();
+        long nbrDoorsWithCars = montyHallSimulator.getDoors().stream().filter(Door::haveCar).count();
         assertEquals(nbrDoorsWithCars, 1);
 
-        long nbrDoorsWithGoats = montyHallSimulator.doors.stream().filter(d -> d.content == GOAT).count();
+        long nbrDoorsWithGoats = montyHallSimulator.getDoors().stream().filter(Door::haveGoat).count();
         assertEquals(nbrDoorsWithGoats, nbrDoors - 1);
 
-        long nbrDoorsClosed = montyHallSimulator.doors.stream().filter(d -> d.doorState == CLOSED).count();
+        long nbrDoorsClosed = montyHallSimulator.getDoors().stream().filter(Door::isClosed).count();
         assertEquals(nbrDoorsClosed, nbrDoors);
     }
 
@@ -39,7 +36,7 @@ public class MontyHallSimulatorTest {
     public void testSimulation() {
         MontyHallSimulator montyHallSimulator = new MontyHallSimulator(3);
         montyHallSimulator.userAlwaysSwitchesDoor();
-        Map<MontyHallSimulator.Stat, Integer> stats = MontyHallSimulator.simulate(3, 1000, ALWAYS);
-        System.out.println(stats);
+        Stats stats = MontyHallSimulator.simulate(3, 1000, ALWAYS);
+        Assert.assertTrue(stats.getStats().get(WIN_PERCENTAGE) > 60);
     }
 }
